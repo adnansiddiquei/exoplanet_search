@@ -1,0 +1,16 @@
+[tool.ruff]
+# Assume Python 3.12
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`), a subset of the pycodestyle (`E`) codes, pycodestyle warnings (`W`).
+# This will mimic the default flake8 configuration for linting.
+select = ["E4", "E7", "E9", "F", "W"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+# Ignore unused-imports in __init__.py files.
+"**/__init__.py" = ["F401"]
+
+[tool.ruff.format]
+# Override the default setting, which is "double".
+quote-style = "single"

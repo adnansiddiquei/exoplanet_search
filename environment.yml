@@ -4,9 +4,16 @@ channels:
   - defaults
 dependencies:
   - python=3.12
-  - numpy==1.26.4
-  - tqdm==4.66.2
+  - numpy==1.26.*
+  - pandas==2.2.*
+  - tqdm==4.66.*
+  - lightkurve=2.4.*
+  - scipy=1.13.*
+  - plotly
   - jupyter
   - matplotlib
   - ruff
   - pre-commit
+  - pip
+  - pip:
+    - transitleastsquares

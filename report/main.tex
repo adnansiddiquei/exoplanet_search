@@ -1,0 +1,73 @@
+%! Author = adnansiddiquei
+%! Date = 05/03/2024
+
+% Preamble
+\documentclass[a4paper,11pt]{article}
+\pdfoutput=1
+
+% Packages
+\usepackage{jcappub}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{roboto}
+\usepackage{subcaption}
+\usepackage{blindtext}
+\usepackage{seqsplit}
+
+%\newcommand{\inlinecode}[1]{\lstinline{#1}}
+%\newcommand{\inlinecode}[1]{\texttt{#1}}
+\newcommand{\inlinecode}[1]{\texttt{\seqsplit{#1}}}
+\lstset{basicstyle=\fontfamily{pcr}\selectfont}
+
+
+\title{\boldmath Exoplanets: - Coursework Assignment}
+
+% %simple case: 2 authors, same institution
+\author{Adnan Siddiquei}
+\affiliation{University of Cambridge}
+
+% e-mail addresses: one for each author, in the same order as the authors
+\emailAdd{as3438@cam.ac.uk}
+\note{Word Count: XXXXX (including figure captions and appendix).}
+
+
+\begin{document}
+\maketitle
+\flushbottom
+
+
+\input{sections/q1}
+
+\clearpage
+\appendix
+
+%\section{MNIST Classifier Details}\label{app:mnist-classifier}
+%The MNIST classifier model is a CNN composed of 4 \inlinecode{CNNBlocks} ($[32, 64, 128, 64]$ channels per block) followed by an
+%\inlinecode{nn.AdaptiveAvgPool2d} to lower the dimensionality of the penultimate feature vector to 1024 before it is fed into
+%a fully connected \inlinecode{nn.Linear} layer with 10 output units (one for each class in the MNIST dataset).
+%This classifier was trained for 21 epochs with a batch size of 128 and a learning rate of $2 \times 10^{-4}$ using the Adam optimiser.
+%The loss function used was the cross-entropy loss function and the test set classification accuracy reached was 99.34\% on
+%the final epoch.
+%To extract the 1024-length feature vector, the final \inlinecode{nn.Linear} layer was set to \inlinecode{nn.Identity}
+%so that the model outputted the penultimate layer feature vector instead of the class predictions.
+%The model was trained on the MNIST training set and the test set was used for evaluation of the FMD.
+
+\begin{thebibliography}{99}
+
+%\bibitem{prince}
+%Simon J.D.\ Prince,
+%\textit{Understanding Deep Learning}.
+%The MIT Press, 2023.
+%Available at \url{https://udlbook.github.io/udlbook/} [Accessed: 20-Mar-2024].
+%
+%\bibitem{bansal}
+%Bansal et al.,
+%\textit{Cold Diffusion: Inverting Arbitrary Image Transforms Without Noise}.
+%University of Maryland and New York University, 2022.
+%Available at \url{https://arxiv.org/pdf/2208.09392.pdf} [Accessed: 28-Mar-2024].
+
+\end{thebibliography}
+
+
+
+\end{document}

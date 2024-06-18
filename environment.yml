@@ -19,6 +19,8 @@ dependencies:
   - jupyter
   - matplotlib
   - ruff
+  - emcee
+  - corner
   - pre-commit
 #  - celerite
   - h5py

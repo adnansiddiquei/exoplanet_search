@@ -3,21 +3,23 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11
-  - numpy
-  - pandas
-  - tqdm
-  - lightkurve=2.4.*
+  - python=3.10
+  - pip
+  - pip:
+      - transitleastsquares
+#      - radvel
+  - numpy=1.24.3
   - scipy
+  - scikit-learn
+  - pandas
+  - gpy
+  - tqdm
+#  - lightkurve=2.4.*
   - plotly
   - jupyter
   - matplotlib
   - ruff
   - pre-commit
-  - pip
-  - celerite
+#  - celerite
   - h5py
-  - dynesty
-  - pip:
-    - transitleastsquares
-    - radvel
+#  - george

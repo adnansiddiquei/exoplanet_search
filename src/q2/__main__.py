@@ -13,10 +13,12 @@ from sklearn.preprocessing import StandardScaler
 from src.utils import create_dir_if_required, save_dill, load_dill
 import os
 import corner
-import math
 
 
 def main():
+    # -----------------------------------------------------------------------------------------------
+    # LOAD THE DATA
+    # -----------------------------------------------------------------------------------------------
     out_dir = create_dir_if_required(__file__, 'out')
     cwd = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.join(cwd, '../../data')
@@ -40,8 +42,9 @@ def main():
         skiprows=8,
     )
 
-    # standardise the data so that it is easier to fit, we ensure to keep the StandardScaler objects to reverse the
-    # transformations later
+    # -----------------------------------------------------------------------------------------------
+    # PREPROCESS THE DATA - Standardise
+    # -----------------------------------------------------------------------------------------------
     time_scaler = StandardScaler()
     rv_scaler = StandardScaler()
     fwhm_scaler = StandardScaler()
@@ -69,6 +72,10 @@ def main():
 
     # set a seed for reproducibility
     np.random.seed(42)
+
+    # -----------------------------------------------------------------------------------------------
+    # MODEL STELLAR NOISE - with a Quasi-Periodic GP model, jointly fitting the RV data and the stellar indicators
+    # -----------------------------------------------------------------------------------------------
 
     # Create a QuasiPeriodicKernel GP model which we will fit to the rv data and stellar activity indicators
     # simultaneously
@@ -167,6 +174,10 @@ def main():
     plt.savefig(f'{out_dir}/stellar_noise_fit.png', bbox_inches='tight')
     plt.clf()
 
+    # -----------------------------------------------------------------------------------------------
+    # FIT 1 PLANET MODEL - with a sinusoidal model, fitting the residuals of the RV data - stellar noise
+    # -----------------------------------------------------------------------------------------------
+
     # Now lets try to fit a planet to the residuals
     rv_fit.compute_kernel(time, time, rv_err).compute_loglikelihood(rv)
     mu_post, cov_post = rv_fit.compute_posterior(time)
@@ -180,78 +191,71 @@ def main():
         data['time'], real_residuals, data['radial_velocity_uncertainty'], num_planets=1
     )
 
-    out_file_orbital_model = f'{out_dir}/orbital_model_final.dill'
+    out_file_orbital_model = f'{out_dir}/1planet_model_final.dill'
 
-    P_range = (0, (data['time'].max() - data['time'].min()))
-    counter = 0
+    ignorant_prior_amplitude = (0, 1.5 * (real_residuals.max() - real_residuals.min()))
+    ignorant_prior_P = (0, (data['time'].max() - data['time'].min()))
+    ignorant_prior_phase_offset = (0, 2 * np.pi)
 
-    # We continue to refine the period range until it is less than 100 days
-    while P_range[1] - P_range[0] != 25:
-        # First we scan the entire parameter space, with very ignorant, large, uniform priors
-        if not os.path.exists(f'{out_dir}/orbital_model_{counter}.dill'):
-            orbital_model_sampler = orbital_model.run_mcmc(
-                uniform_priors={
-                    'amplitude': (
-                        0,
-                        1.5 * (real_residuals.max() - real_residuals.min()),
-                    ),
-                    'P': P_range,
-                    'phase_offset': (1e-4, 2 * np.pi),
-                },
-                nwalkers=100,
-                niterations=1000,
-            )
-
-            save_dill(orbital_model_sampler, f'{out_dir}/orbital_model_{counter}.dill')
-        else:
-            orbital_model_sampler = load_dill(f'{out_dir}/orbital_model_{counter}.dill')
-
-        # Extract the samples from the MCMC sampler
-        samples = orbital_model_sampler.get_chain(discard=burn_in, thin=thin, flat=True)
-        log_prob_samples = orbital_model_sampler.get_log_prob(
-            discard=burn_in, thin=thin, flat=True
-        )
-        planet_period = samples[:, 1]
-
-        # Extract the 10% most likely samples
-        threshold = np.percentile(log_prob_samples, 90)
-        filtered_planet_periods = planet_period[log_prob_samples >= threshold]
-        filtered_log_prob_samples = log_prob_samples[log_prob_samples >= threshold]
-
-        fig, ax = plt.subplots()
-        plt.scatter(planet_period, log_prob_samples, s=1, label='All samples')
-        plt.scatter(
-            filtered_planet_periods,
-            filtered_log_prob_samples,
-            s=1,
-            label='90th percentile',
-        )
-        plt.xlabel('Period')
-        plt.ylabel('Log Likelihood')
-        plt.legend()
-
-        plt.savefig(
-            f'{out_dir}/orbital_model_period_likelihood_{counter}.png',
-            bbox_inches='tight',
+    # First we scan the entire parameter space, with very ignorant, large, uniform priors
+    if not os.path.exists(f'{out_dir}/1planet_model_1.dill'):
+        orbital_model_sampler = orbital_model.run_mcmc(
+            uniform_priors={
+                'amplitude_0': ignorant_prior_amplitude,
+                'P_0': ignorant_prior_P,
+                'phase_offset_0': ignorant_prior_phase_offset,
+            },
+            nwalkers=100,
+            niterations=1000,
         )
 
-        P_range = (
-            math.floor(filtered_samples[:, 1].min() / 25) * 25,
-            math.ceil(filtered_samples[:, 1].max() / 25) * 25,
-        )
+        save_dill(orbital_model_sampler, f'{out_dir}/1planet_model_1.dill')
+    else:
+        orbital_model_sampler = load_dill(f'{out_dir}/1planet_model_1.dill')
 
-        print(
-            f'90th percentile range: {filtered_samples[:, 1].min():.2f} - {filtered_samples[:, 1].max():.2f}'
-        )
+    # Extract the samples from the MCMC sampler
+    samples = orbital_model_sampler.get_chain(discard=burn_in, thin=thin, flat=True)
+    log_prob_samples = orbital_model_sampler.get_log_prob(
+        discard=burn_in, thin=thin, flat=True
+    )
+    planet_period = samples[:, 1]
 
-        counter += 1
+    # Extract the 10% most likely samples
+    threshold = np.percentile(log_prob_samples, 90)
+    filtered_planet_periods = planet_period[log_prob_samples >= threshold]
+    filtered_log_prob_samples = log_prob_samples[log_prob_samples >= threshold]
 
+    # plot the likelihood vs. period as a visualisation
+    fig, ax = plt.subplots()
+    plt.plot(planet_period, log_prob_samples, 'x', label='All samples')
+    plt.plot(
+        filtered_planet_periods,
+        filtered_log_prob_samples,
+        'x',
+        label='90th percentile',
+    )
+    plt.xlabel('Period')
+    plt.ylabel('Log Likelihood')
+    plt.legend()
+
+    plt.savefig(
+        f'{out_dir}/1planet_model_period_likelihood_1.png',
+        bbox_inches='tight',
+    )
+
+    # this will print "90th percentile range: 5.37 - 6.32"
+    print(
+        f'90th percentile range: {filtered_samples[:, 1].min():.2f} - {filtered_samples[:, 1].max():.2f}'
+    )
+
+    # Now based on the above first scan, we can refine the priors for the period to a smaller range
+    # this model will yield a much better estimate of the parameters
     if not os.path.exists(out_file_orbital_model):
         orbital_model_sampler = orbital_model.run_mcmc(
             uniform_priors={
-                'amplitude': (0, 1.5 * (real_residuals.max() - real_residuals.min())),
-                'P': P_range,
-                'phase_offset': (1e-4, 2 * np.pi),
+                'amplitude_0': ignorant_prior_amplitude,
+                'P_0': (0, 25),
+                'phase_offset_0': ignorant_prior_phase_offset,
             },
             nwalkers=200,
             niterations=2000,
@@ -259,6 +263,83 @@ def main():
         save_dill(orbital_model_sampler, out_file_orbital_model)
     else:
         orbital_model_sampler = load_dill(out_file_orbital_model)
+
+    # Extract the samples from the MCMC sampler
+    samples = orbital_model_sampler.get_chain(discard=burn_in, thin=thin, flat=True)
+    log_prob_samples = orbital_model_sampler.get_log_prob(
+        discard=burn_in, thin=thin, flat=True
+    )
+    labels = orbital_model.params_keys
+    figure = corner.corner(samples, labels=labels, truths=None)
+    plt.savefig(f'{out_dir}/1planet_model_corner_plot.png', bbox_inches='tight')
+
+    # -----------------------------------------------------------------------------------------------
+    # FIT 2 PLANET MODEL - with the sum of 2 sins
+    # -----------------------------------------------------------------------------------------------
+    # print('Fitting 2 planet model...')
+    # orbital_model_2 = SinusoidalModel(
+    #     data['time'], real_residuals, data['radial_velocity_uncertainty'], num_planets=2
+    # )
+    #
+    # if not os.path.exists(f'{out_dir}/2planet_model_1.dill'):
+    #     print('Running MCMC on 2 planet model (run 1)...')
+    #     np.random.seed(42)
+    #     orbital_model_sampler_2 = orbital_model_2.run_mcmc(
+    #         uniform_priors={
+    #             'amplitude_0': ignorant_prior_amplitude,
+    #             'P_0': ignorant_prior_P,
+    #             'phase_offset_0': ignorant_prior_phase_offset,
+    #             'amplitude_1': ignorant_prior_amplitude,
+    #             'P_1': ignorant_prior_P,
+    #             'phase_offset_1': ignorant_prior_phase_offset,
+    #         },
+    #         nwalkers=250,
+    #         niterations=2000,
+    #     )
+    #
+    #     save_dill(orbital_model_sampler_2, f'{out_dir}/2planet_model_1.dill')
+    # else:
+    #     orbital_model_sampler_2 = load_dill(f'{out_dir}/2planet_model_1.dill')
+    #
+    # if not os.path.exists(f'{out_dir}/2planet_model_2.dill'):
+    #     print('Running MCMC on 2 planet model (run 2)...')
+    #     np.random.seed(42)
+    #     orbital_model_sampler_2 = orbital_model_2.run_mcmc(
+    #         uniform_priors={
+    #             'amplitude_0': ignorant_prior_amplitude,
+    #             'P_0': (0, 800),
+    #             'phase_offset_0': ignorant_prior_phase_offset,
+    #             'amplitude_1': ignorant_prior_amplitude,
+    #             'P_1': ignorant_prior_P,
+    #             'phase_offset_1': ignorant_prior_phase_offset,
+    #         },
+    #         nwalkers=250,
+    #         niterations=2000,
+    #     )
+    #
+    #     save_dill(orbital_model_sampler_2, f'{out_dir}/2planet_model_2.dill')
+    # else:
+    #     orbital_model_sampler_2 = load_dill(f'{out_dir}/2planet_model_2.dill')
+    #
+    # if not os.path.exists(f'{out_dir}/2planet_model_3.dill'):
+    #     print('Running MCMC on 2 planet model (run 3)...')
+    #     np.random.seed(42)
+    #     orbital_model_sampler_2 = orbital_model_2.run_mcmc(
+    #         uniform_priors={
+    #             'amplitude_0': ignorant_prior_amplitude,
+    #             'P_0': (0, 100),
+    #             'phase_offset_0': ignorant_prior_phase_offset,
+    #             'amplitude_1': ignorant_prior_amplitude,
+    #             'P_1': ignorant_prior_P,
+    #             'phase_offset_1': ignorant_prior_phase_offset,
+    #         },
+    #         nwalkers=250,
+    #         niterations=2000,
+    #     )
+    #
+    #     save_dill(orbital_model_sampler_2, f'{out_dir}/2planet_model_3.dill')
+    # else:
+    #     orbital_model_sampler_2 = load_dill(f'{out_dir}/2planet_model_3.dill')
 
 
 if __name__ == '__main__':

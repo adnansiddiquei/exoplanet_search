@@ -19,17 +19,32 @@ def fold(time, period, phase_offset):
 
 class SinusoidalModel:
     def __init__(self, time, y, y_err, num_planets=1):
+        assert num_planets > 0 and isinstance(num_planets, int)
+
         self.time = time
         self.y = y
         self.y_err = y_err
         self.num_planets = num_planets
 
-        self.params_keys = ['amplitude', 'P', 'phase_offset']
+        self.params_keys = (
+            [f'amplitude_{i}' for i in range(self.num_planets)]
+            + [f'P_{i}' for i in range(self.num_planets)]
+            + [f'phase_offset_{i}' for i in range(self.num_planets)]
+        )
 
         self.model_params = None
 
-    def _sin_wave(self, x, amplitude, P, phase_offset):
-        return amplitude * np.sin((2 * np.pi * x / P) + phase_offset)
+    def _sin_wave(self, x, theta):
+        y = np.zeros_like(x)
+
+        for i in range(self.num_planets):
+            amplitude = theta[f'amplitude_{i}']
+            P = theta[f'P_{i}']
+            phase_offset = theta[f'phase_offset_{i}']
+
+            y += amplitude * np.sin((2 * np.pi * x / P) + phase_offset)
+
+        return y
 
     def run_mcmc(
         self,
@@ -62,11 +77,14 @@ class SinusoidalModel:
                 upper_bound,
             )
 
+        # re-order the prior_sampler so that it matches the order of the self.params_keys created in __init__
         prior_sampler = {key: prior_sampler[key] for key in self.params_keys}
 
         def log_likelihood(theta):
             theta = {key: value for key, value in zip(self.params_keys, theta)}
-            model = self._sin_wave(self.time, **theta)
+
+            model = self._sin_wave(self.time, theta)
+
             return -0.5 * np.sum(
                 (self.y - model) ** 2 / self.y_err**2
                 + np.log(2 * np.pi * self.y_err**2)

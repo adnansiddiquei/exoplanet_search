@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from src.utils import (
     create_dir_if_required,
-    save_pickle,
+    save_dill,
     identify_outliers,
     plot_folded_lightcurve,
     normalise,
@@ -39,7 +39,7 @@ if __name__ == '__main__':
             tess_data['time'], tess_data['flux'], dy=tess_data['flux_error']
         )
         tls_results_0 = model.power()
-        save_pickle(tls_results_0, os.path.join(out_dir, 'tls_results_0.pkl'))
+        save_dill(tls_results_0, os.path.join(out_dir, 'tls_results_0.pkl'))
         print('Computed tls_results_0.pkl. Saved to out folder.')
     else:  # unless we have already computed it, then load it up
         tls_results_0 = pd.read_pickle(os.path.join(out_dir, 'tls_results_0.pkl'))
@@ -68,7 +68,7 @@ if __name__ == '__main__':
                 tess_data['time'], tess_data['flux'], dy=tess_data['flux_error']
             )
             tls_results_initial = model.power(period_max=25)
-            save_pickle(
+            save_dill(
                 tls_results_initial,
                 os.path.join(out_dir, f'tls_results_{i+1}_initial.pkl'),
             )
@@ -98,7 +98,7 @@ if __name__ == '__main__':
                 period_min=tls_results_initial.period - 0.4,
             )
 
-            save_pickle(tls_results, out_file)
+            save_dill(tls_results, out_file)
             print(f'Computed tls_results_{i+1}.pkl. Saved to out folder.')
         else:  # unless we have already computed it, then load it up
             tls_results = pd.read_pickle(out_file)

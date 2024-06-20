@@ -1,6 +1,6 @@
 from scipy.signal import savgol_filter, medfilt
 import numpy as np
-import pickle
+import dill
 import os
 import matplotlib.pyplot as plt
 
@@ -35,7 +35,7 @@ def identify_outliers(data, threshold=3.0):
     return outliers
 
 
-def save_pickle(obj: object, path: str) -> None:
+def save_dill(obj: object, path: str) -> None:
     """
     Save a Python object to a pickle file.
 
@@ -48,10 +48,10 @@ def save_pickle(obj: object, path: str) -> None:
 
     """
     with open(path, 'wb') as f:
-        pickle.dump(obj, f)
+        dill.dump(obj, f)
 
 
-def load_pickle(path: str) -> object:
+def load_dill(path: str) -> object:
     """
     Load a Python object from a pickle file.
 
@@ -67,7 +67,7 @@ def load_pickle(path: str) -> object:
 
     """
     with open(path, 'rb') as f:
-        return pickle.load(f)
+        return dill.load(f)
 
 
 def create_dir_if_required(script_filepath: str, dir_name: str) -> str:

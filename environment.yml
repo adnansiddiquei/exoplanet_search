@@ -7,7 +7,7 @@ dependencies:
   - pip
   - pip:
       - transitleastsquares
-#      - radvel
+      - radvel
   - numpy=1.24.3
   - scipy
   - scikit-learn
@@ -22,6 +22,6 @@ dependencies:
   - emcee
   - corner
   - pre-commit
-#  - celerite
+  - celerite
   - h5py
 #  - george

@@ -1,6 +1,73 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .utils import invert_transform, invert_scale
+from .utils import invert_transform, invert_scale, fold
+
+
+def plot_1planet_model(
+    time, residuals, rv_err, orbital_model, samples, log_prob_samples
+):
+    # extract the best fit params
+    best_fit_params = samples[np.argmax(log_prob_samples)]
+    params = {
+        key: value for key, value in zip(orbital_model.params_keys, best_fit_params)
+    }
+
+    # extract the estiamtes for the period and amplitude
+    periods = samples[:, 1]
+    periods = periods[(periods > 2.5) & (periods < 7.5)]
+    p_mean, p_std = periods.mean(), periods.std()
+    amp_mean, amp_std = np.mean(samples[:, 0]), np.std(samples[:, 0])
+
+    # start plotting
+    fig, axes = plt.subplots(
+        2, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [1, 0.5]}
+    )
+
+    folded_time = fold(time, params['P_0'], params['phase_offset_0'])
+    x_preds = np.linspace(folded_time.min(), folded_time.max(), 1000)
+
+    axes[0].errorbar(
+        folded_time / folded_time.max(),
+        residuals,
+        yerr=rv_err,
+        fmt='kx',
+        label='RV (Stellar Noise Removed)',
+    )
+
+    axes[0].plot(
+        x_preds / x_preds.max(),
+        orbital_model._sin_wave(x_preds, params),
+        label='Best fit model',
+    )
+
+    axes[0].margins(x=0.03)
+    axes[1].set_xlabel('Phase')
+    axes[0].set_ylabel('RV ($m s^{-1}$)')
+    axes[0].axhline(0, color='red', linestyle='--')
+    y_min, y_max = axes[0].get_ylim()
+    axes[0].text(
+        0.75,
+        y_max - 0.05 * (y_max - y_min),
+        rf'Period = {p_mean:.2f} $\pm$ {p_std:.2f} days'
+        + '\n'
+        + rf'Amplitude = {amp_mean:.2e} $\pm$ {amp_std:.1e} $ms^{{-1}}$',
+        color='black',
+        fontsize=14,
+        ha='right',
+        va='top',
+        bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'),
+    )
+
+    residuals_2 = residuals - orbital_model._sin_wave(folded_time, params)
+    axes[1].errsrbar(
+        folded_time / folded_time.max(), residuals_2, yerr=rv_err, fmt='kx'
+    )
+    axes[1].margins(x=0.03)
+    axes[1].set_ylabel('Residuals')
+    axes[1].axhline(0, color='red', linestyle='--')
+
+    axes[0].legend()
+    return fig, axes
 
 
 def triple_plot(kernels, time, y, y_err, time_scaler, y_scalers):

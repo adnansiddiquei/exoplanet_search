@@ -7,7 +7,7 @@ from .utils import (
     invert_scale,
     invert_transform,
 )
-from .plotting_utils import triple_plot
+from .plotting_utils import triple_plot, plot_1planet_model
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from src.utils import create_dir_if_required, save_dill, load_dill
@@ -85,6 +85,7 @@ def main():
     out_file_stellar = f'{out_dir}/stellar_noise_mcmc_sampler.dill'
 
     if not os.path.exists(out_file_stellar):
+        np.random.seed(42)
         stellar_noise_mcmc_sampler = gp.run_mcmc(
             uniform_priors={
                 'stellar_amp': (1e-4, 3 * (rv.max() - rv.min())),
@@ -191,14 +192,13 @@ def main():
         data['time'], real_residuals, data['radial_velocity_uncertainty'], num_planets=1
     )
 
-    out_file_orbital_model = f'{out_dir}/1planet_model_final.dill'
-
     ignorant_prior_amplitude = (0, 1.5 * (real_residuals.max() - real_residuals.min()))
     ignorant_prior_P = (0, (data['time'].max() - data['time'].min()))
     ignorant_prior_phase_offset = (0, 2 * np.pi)
 
     # First we scan the entire parameter space, with very ignorant, large, uniform priors
     if not os.path.exists(f'{out_dir}/1planet_model_1.dill'):
+        np.random.seed(42)
         orbital_model_sampler = orbital_model.run_mcmc(
             uniform_priors={
                 'amplitude_0': ignorant_prior_amplitude,
@@ -221,7 +221,7 @@ def main():
     planet_period = samples[:, 1]
 
     # Extract the 10% most likely samples
-    threshold = np.percentile(log_prob_samples, 90)
+    threshold = np.percentile(log_prob_samples, 95)
     filtered_planet_periods = planet_period[log_prob_samples >= threshold]
     filtered_log_prob_samples = log_prob_samples[log_prob_samples >= threshold]
 
@@ -232,46 +232,64 @@ def main():
         filtered_planet_periods,
         filtered_log_prob_samples,
         'x',
-        label='90th percentile',
+        label='99th percentile',
     )
     plt.xlabel('Period')
     plt.ylabel('Log Likelihood')
     plt.legend()
-
+    plt.ylim(-1500, -1000)
     plt.savefig(
         f'{out_dir}/1planet_model_period_likelihood_1.png',
         bbox_inches='tight',
     )
 
-    # this will print "90th percentile range: 5.37 - 6.32"
+    # this will print "95th percentile range: 1.47 - 222.87"
     print(
-        f'90th percentile range: {filtered_samples[:, 1].min():.2f} - {filtered_samples[:, 1].max():.2f}'
+        f'95th percentile range: {filtered_planet_periods.min():.2f} - {filtered_planet_periods.max():.2f} which '
+        f'consists {len(filtered_planet_periods)} samples out of {len(planet_period)} samples.'
     )
 
     # Now based on the above first scan, we can refine the priors for the period to a smaller range
     # this model will yield a much better estimate of the parameters
-    if not os.path.exists(out_file_orbital_model):
+    if not os.path.exists(f'{out_dir}/1planet_model_2.dill'):
+        np.random.seed(42)
         orbital_model_sampler = orbital_model.run_mcmc(
             uniform_priors={
                 'amplitude_0': ignorant_prior_amplitude,
-                'P_0': (0, 25),
+                'P_0': (
+                    0,
+                    filtered_planet_periods.max() * 1.1,
+                ),  # so we now know the period is between 1.47 and 222.87
                 'phase_offset_0': ignorant_prior_phase_offset,
             },
-            nwalkers=200,
+            nwalkers=250,
             niterations=2000,
         )
-        save_dill(orbital_model_sampler, out_file_orbital_model)
+        save_dill(orbital_model_sampler, f'{out_dir}/1planet_model_2.dill')
     else:
-        orbital_model_sampler = load_dill(out_file_orbital_model)
+        orbital_model_sampler = load_dill(f'{out_dir}/1planet_model_2.dill')
 
     # Extract the samples from the MCMC sampler
     samples = orbital_model_sampler.get_chain(discard=burn_in, thin=thin, flat=True)
     log_prob_samples = orbital_model_sampler.get_log_prob(
         discard=burn_in, thin=thin, flat=True
     )
+
+    # plot the corner plot
     labels = orbital_model.params_keys
     figure = corner.corner(samples, labels=labels, truths=None)
     plt.savefig(f'{out_dir}/1planet_model_corner_plot.png', bbox_inches='tight')
+
+    # plot the fit
+    fig, ax = plot_1planet_model(
+        data['time'],
+        real_residuals,
+        data['radial_velocity_uncertainty'],
+        orbital_model,
+        samples,
+        log_prob_samples,
+    )
+    plt.savefig(f'{out_dir}/1planet_model_fit.png', bbox_inches='tight')
 
     # -----------------------------------------------------------------------------------------------
     # FIT 2 PLANET MODEL - with the sum of 2 sins

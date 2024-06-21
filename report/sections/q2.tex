@@ -212,6 +212,11 @@ errors on the orbital period $P$ was calculated using only the samples centered 
 Similar exploration on the 2 planet model did not yield any significant results indicating the possibility of a second
 exoplanet and as such, the single planet model was taken as the best fit model to the RV data for star CB 01223.
 
+Table \eqref{tab:final_posteriors} shows a summary of the final posterior distributions for all key parameters and derived
+properties for star CB 01223 in the single planet model.
+The planet was computed to have a semi-major axis of $0.051 \pm 0.020$ AU, indicating that it lives very close to the host star,
+making it likely to be a hot Jupiter.
+
 \begin{figure}[htb]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/1planet_model_fit}
@@ -235,11 +240,13 @@ exoplanet and as such, the single planet model was taken as the best fit model t
         \toprule
         Parameter & Units & Prior \\
         \midrule
-        Stellar Period $P_{\star}$ & $t$ & $35.4 \pm 0.3$ \\
+        Stellar Period $P_{\star}$ & $days$ & $35.4 \pm 0.3$ \\
         \addlinespace
         Planet Orbital Period $P_{planet}$ & $days$ & $5.09 \pm 0.87$  \\
         \addlinespace
         Planet Semi-amplitude $K$ & $ms^{-1}$ & $2.24e^{-3} \pm 0.61e^{-3}$ \\
+        \addlinespace
+        Planet Semi-major Axis $a$ & $AU$ & $0.051 \pm 0.020$ \\
         \bottomrule
     \end{tabular}
     \caption{Final summary of posterior distributions for all key parameters and derived properties for star CB 01223

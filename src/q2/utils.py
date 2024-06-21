@@ -330,6 +330,25 @@ class MultiQuasiPeriodicKernel:
         self.y = None
 
     def compute_kernel(self, x1, x2, y_err=None, jitter=1e-10):
+        """
+        Compute the kernel matrix given the input data.
+
+        Parameters
+        ----------
+        x1 : np.ndarray
+            The input data.
+        x2 : np.ndarray
+            The input data.
+        y_err : np.ndarray
+            The error on the data.
+        jitter : float
+            The jitter to add to the diagonal of the kernel matrix.
+
+        Returns
+        -------
+        MultiQuasiPeriodicKernel
+            The object with the kernel matrix computed.
+        """
         self.x1 = x1
         self.x2 = x2
 
@@ -360,6 +379,19 @@ class MultiQuasiPeriodicKernel:
         return self
 
     def compute_loglikelihood(self, y):
+        """
+        Compute the log likelihood of the kernel given the data.
+
+        Parameters
+        ----------
+        y : np.ndarray
+            The data
+
+        Returns
+        -------
+        MultiQuasiPeriodicKernel
+            The object with the log likelihood computed.
+        """
         self.y = y
 
         factor, flag = spl.cho_factor(self.kernel)
@@ -370,11 +402,32 @@ class MultiQuasiPeriodicKernel:
         return self
 
     def clone(self):
+        """
+        Clone the object.
+
+        Returns
+        -------
+        MultiQuasiPeriodicKernel
+            A copy of the object.
+        """
         return MultiQuasiPeriodicKernel(
             self.amplitudes, self.Ps, self.length_scale_periodics, self.length_scale_exp
         )
 
     def compute_posterior(self, x_test):
+        """
+        Compute the posterior mean and covariance of the kernel given the test data.
+
+        Parameters
+        ----------
+        x_test : np.ndarray
+            The test data.
+
+        Returns
+        -------
+        tuple
+            The posterior mean and covariance.
+        """
         assert (
             self.kernel is not None
         ), 'Kernel has not been computed. Please run compute_kernel first.'
@@ -411,6 +464,9 @@ class MultiQuasiPeriodicKernel:
         return mu_post, cov_post
 
     def fit(self, x, y, y_err, bounds=None, jitter=1e-10):
+        """
+        FUNCTION IS NOT USED BUT LEFT HERE FOR COMPLETENESS.
+        """
         self.compute_kernel(x, x, y_err, jitter).compute_loglikelihood(y)
 
         if bounds is None:
@@ -450,6 +506,27 @@ class MultiQuasiPeriodicKernel:
 
 class StellarAndPlanetGP:
     def __init__(self, x, y, y_err=None, num_planets=1):
+        """
+        A class to model and fit a Gaussian Process to radial velocity data.
+
+        This class is designed to model RV, FWM and BIS data with a MultiQuasiPeriodicKernel in a similar way to
+        Faria, et al. (2022). With num_planets = 1, this class will model the data with a joint quasi-periodic kernel
+        for the stellar signal and a single periodic kernel for the planetary signal. With num_planets = 0 this class
+        will just model the stellar signal
+
+        Parameters
+        ----------
+        x : np.ndarray
+            The time axis for the data.
+        y : np.ndarray
+            The radial velocity data, this must be shape (n, 3) where n is the number of data points. Column 0 is the
+            radial velocity data, column 1 is the FWHM data and column 2 is the BIS data.
+        y_err : np.ndarray
+            The error on the data. This must be shape (n, 3) where n is the number of data points. Column 0 is the
+            radial velocity error, column 1 is the FWHM error and column 2 is the BIS error.
+        num_planets : int
+            The number of planets to model.
+        """
         self.x = x
         self.y = y if len(y.shape) > 1 else y.reshape(-1, 1)
 
@@ -478,6 +555,19 @@ class StellarAndPlanetGP:
         self.model_params = {}
 
     def _generate_kernels(self, params=None):
+        """
+        Generate the kernel given the parameters.
+
+        Parameters
+        ----------
+        params : dict
+            The parameters of the model. This should be a dictionary with the keys as the self.params_keys.
+
+        Returns
+        -------
+        list
+            A list of MultiQuasiPeriodicKernel objects.
+        """
         if params is None:
             params = self.params
 
@@ -513,6 +603,9 @@ class StellarAndPlanetGP:
         return kernels
 
     def fit(self, initial_theta=None, bounds=None, jitter=1e-10):
+        """
+        FUNCTION IS NOT USED BUT LEFT HERE FOR COMPLETENESS.
+        """
         if initial_theta is None:
             initial_theta = {key: np.random.normal(1, 0.01) for key in self.params_keys}
         else:
@@ -569,6 +662,30 @@ class StellarAndPlanetGP:
         nwalkers=50,
         niterations=100,
     ):
+        """
+        Run an MCMC sampler to fit the sinusoidal model to the data.
+
+        Parameters
+        ----------
+        uniform_priors : dict
+            A dictionary of uniform priors for each parameter. The keys should be the same as subset of self.params_keys
+            and the values should be a tuple of the lower and upper bounds of the uniform prior.
+        gaussian_priors : dict
+            A dictionary of gaussian priors for each parameter. The keys should be the same as subset of self.params_keys
+            and the values should be a tuple of the mean and standard deviation of the gaussian prior.
+        log_uniform_priors : dict
+            A dictionary of log-uniform priors for each parameter. The keys should be the same as subset of self.params_keys
+            and the values should be a tuple of the lower and upper bounds of the log-uniform prior.
+        nwalkers : int
+            The number of walkers to use in the MCMC sampler.
+        niterations : int
+            The number of iterations to run the MCMC sampler for.
+
+        Returns
+        -------
+        emcee.EnsembleSampler
+            The MCMC sampler object.
+        """
         uniform_priors = {} if uniform_priors is None else uniform_priors
         gaussian_priors = {} if gaussian_priors is None else gaussian_priors
         log_uniform_priors = {} if log_uniform_priors is None else log_uniform_priors
@@ -595,6 +712,21 @@ class StellarAndPlanetGP:
         prior_sampler = {key: prior_sampler[key] for key in self.params_keys}
 
         def log_likelihood(theta):
+            """
+            Compute the log likelihood of the sinusoidal model given the parameters theta, against self.y and
+            self.y_err.
+
+            Parameters
+            ----------
+            theta : np.ndarray
+                The parameters of the model. These should be the parameters as a list, in the same order as
+                self.params_keys.
+
+            Returns
+            -------
+            float
+                The log likelihood of the model given the parameters theta.
+            """
             theta = {key: value for key, value in zip(self.params_keys, theta)}
 
             loglikelihood = 0
@@ -613,11 +745,24 @@ class StellarAndPlanetGP:
             return loglikelihood
 
         def log_prior(theta):
+            """
+            Compute the log prior of the model given the parameters theta.
+
+            Parameters
+            ----------
+            theta : np.ndarray
+                The parameters of the model. These should be the parameters as a list, in the same order as
+                self.params_keys.
+
+            Returns
+            -------
+            float
+                The log prior of the model given the parameters theta.
+            """
             theta = {key: value for key, value in zip(self.params_keys, theta)}
 
             prior = 0
 
-            # implement prior for each parameter
             # guassian priors
             for key in gaussian_priors.keys():
                 prior += (
@@ -645,6 +790,20 @@ class StellarAndPlanetGP:
             return prior
 
         def log_posterior(theta):
+            """
+            Compute the log posterior of the model given the parameters theta.
+
+            Parameters
+            ----------
+            theta : np.ndarray
+                The parameters of the model. These should be the parameters as a list, in the same order as
+                self.params_keys.
+
+            Returns
+            -------
+            float
+                The log posterior of the model given the parameters theta.
+            """
             lp = log_prior(theta)
 
             if not np.isfinite(lp):
@@ -657,6 +816,7 @@ class StellarAndPlanetGP:
             [[func() for func in list(prior_sampler.values())] for _ in range(nwalkers)]
         )
 
+        # run the MCMC sampler
         ndim = len(self.params_keys)
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior)
         sampler.run_mcmc(samples_from_prior, niterations, progress=True)

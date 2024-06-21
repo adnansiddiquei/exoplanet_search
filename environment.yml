@@ -7,15 +7,12 @@ dependencies:
   - pip
   - pip:
       - transitleastsquares
-      - radvel
   - numpy=1.24.3
   - scipy
   - scikit-learn
   - pandas
-  - gpy
   - tqdm
-#  - lightkurve=2.4.*
-  - plotly
+  - dill
   - jupyter
   - matplotlib
   - ruff
@@ -24,4 +21,3 @@ dependencies:
   - pre-commit
   - celerite
   - h5py
-#  - george

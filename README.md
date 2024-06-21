@@ -5,7 +5,7 @@
 3. [Understanding the code structure](#code_structure)
 3. [Report](#report)
 
-## <a name="env"></a> 1. TEnvironment Set Up
+## <a name="env"></a> 1. Environment Set Up
 A conda `environment.yml` file is provided in the root of the repository. To create the environment, run
 ```bash
 conda env create -f environment.yml

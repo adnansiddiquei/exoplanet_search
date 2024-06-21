@@ -10,7 +10,7 @@ However, a variety of stellar "nuisance" signals can also induce these shifts in
 These include things like oscillations and granulations which occur over the timescales of minutes to hours; rotationally-modulated
 activity which occur over the timescale of days to weeks, often in line with the star's rotation period; and magnetic cycles
 which are long-term variations in the star's magnetic field.
-Likewise, not all periodic signals in the RV data will be due to RV data or stellar signals, it is important to note
+Likewise, not all periodic signals in the RV data will be due to exoplanets or stellar signals, it is important to note
 that instrument noise or poor sampling (aliasing) can also induce periodic signals in the RV data.
 
 The radial velocity is extracted from an observed spectrum using a cross-correlation function (CCF) which compares the observed
@@ -82,8 +82,8 @@ the stellar activity.
     \right]
 \end{equation}
 
-Equation \eqref{eq:qp-kernel} shows the Quasi-Periodic (QP) kernel used in the GP model, where all $\theta_{2}, \theta_{3}
-\theta_{4}$ were all shared between the RV, FWHM and BIS datasets (hence the joint GP model), but $\theta_{1}$ was allowed
+Equation \eqref{eq:qp-kernel} shows the Quasi-Periodic (QP) kernel used in the GP model, where all $\theta_{2}$, $\theta_{3}$ and
+$\theta_{4}$ were all shared between the RV, FWHM and BIS datasets (hence the joint GP model), but $\theta_{1}$ was allowed
 to float for each dataset.
 
 \begin{table}[htb]
@@ -120,9 +120,9 @@ Note that the data was standardised before fitting the GP model to help with con
 in the non-standardised scale, but these were converted to the standardised scale before fitting.
 Bringing the data to a common scale also allowed for a single jitter term to be used across all three datasets, reducing
 the number of parameters that needed to be fit.
-The jitter term was given a log-uniform prior to allow for a wide range of values, but the upper limit was set to $1e^{-6}$
+The jitter term was given a log-uniform prior to allow for a wide range of values, but the upper limit was set to $1e^{-6}$.
 In general, relatively uninformative priors were used for all the remaining parameters, all priors covered a multiple of the entire
-extent of their respective data.
+extent of their respective dataset ranges.
 The only exception was the stellar period $\theta_{3}$ which was given a Gaussian prior centered around the rotation
 period derived from the TESS photometry measurements.
 
@@ -135,7 +135,7 @@ sample of the MCMC simulation.
 The MCMC simulation found 2 distinct distributions for the stellar period $\theta_{3}$ in the posterior space, as shown
 in Figure~\eqref{fig:stellar_period_2dhist} which plots a 2D histogram of the stellar period $\theta_{3}$ and the log-likelihood
 of the MCMC samples, illustrating the two distinct distributions.
-The maximum likelihood sample of the MCMC simulation has a period of 35.3 days.
+The maximum likelihood sample of the MCMC simulation had a period of 35.3 days.
 
 \begin{figure}[htb]
     \centering
@@ -166,9 +166,9 @@ The maximum likelihood sample of the MCMC simulation has a period of 35.3 days.
 As per the methodology used by Faria, et al. (2022)~\cite{faria2022}, the GP model was subtracted from the RV data as shown
 in the residual plot in Figure~\eqref{fig:stellar_noise_fit}.
 A simplified Keplerian model, in the form of a sine wave was then fit to the residuals to identify any potential exoplanets.
-The single planet model consisted of 3 parameters: the semi-amplitude $K$, the orbital period $P$ and the phase $\phi$,
-likewise, the 2 planet model consisted of 6 parameters: the semi-amplitudes $K_{1}, K_{2}$, the orbital periods $P_{1}, P_{2}$
-and the phases $\phi_{1}, \phi_{2}$.
+The single planet model consisted of 3 parameters: the semi-amplitude $K$, the orbital period $P$ and the phase offset $\phi$.
+Likewise, the 2 planet model consisted of 6 parameters: the semi-amplitudes $K_{1}, K_{2}$, the orbital periods $P_{1}, P_{2}$
+and the phase offsets $\phi_{1}, \phi_{2}$.
 Both of these models used the priors shown in Table~\eqref{tab:kepler_priors}, the priors were chosen to be relatively
 uninformative, covering at least the entire range of values that the parameters could take.
 
@@ -186,7 +186,7 @@ uninformative, covering at least the entire range of values that the parameters 
         Phase Offset $\phi$ & $s$ & $\mathcal{U}(0, 2\pi)$ \\
         \bottomrule
     \end{tabular}
-    \caption{Parameters and priors for the joint QP GP model on the RV, FWHM and BIS datasets.
+    \caption{Parameters and priors for the sinusoidal orbital model on the residuals of the RV data.
     Both of the single and 2 planet models used these same priors.}
     \label{tab:kepler_priors}
 \end{table}
@@ -197,7 +197,7 @@ This was done to ensure that no bias was added into the priors initially, but to
 explore the higher likelihood regions of the posterior space to yield a better final estimate of the parameters.
 
 For the single planet model, the initial MCMC simulation found that the top 5th percentile of the samples (based on the
-log-likelihood) has a period in the range $[1.72, 53.10]$, and so a second simulation was conducted with a new uniform
+log-likelihood) had a period in the range $[1.72, 53.10]$, and so a second simulation was conducted with a new uniform
 prior on the orbital period $P$ being $\mathcal{U}(0, 58)$.
 This yielded a best fit model as shown in Figure~\eqref{fig:1planet_model_fit}, with the corner plot of the simulation
 samples given in Figure~\eqref{fig:1planet_model_corner_plot}.
@@ -246,7 +246,7 @@ making it likely to be a hot Jupiter.
         \addlinespace
         Planet Semi-amplitude $K$ & $ms^{-1}$ & $2.24e^{-3} \pm 0.61e^{-3}$ \\
         \addlinespace
-        Planet Semi-major Axis $a$ & $AU$ & $0.051 \pm 0.020$ \\
+        Planet Semi-major Axis $a$ & $AU$ & $0.051 \pm 0.017$ \\
         \bottomrule
     \end{tabular}
     \caption{Final summary of posterior distributions for all key parameters and derived properties for star CB 01223

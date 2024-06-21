@@ -34,10 +34,12 @@ There are 2 folders, `src/q1` and `src/q2`, each of which contains a `__main__.p
 respective question. The `__main__.py` files utilise functions in the `plotting_utils.py` file to generate plots
 and function in the `utils.py` to perform other utility tasks.
 
+There are a few shared utility function that both Q1 and Q2 use, which are in the `src/utils.py` file.
+
 Q1 primarily makes use of the `transitleastsquares` package for most of the heavy lifting.
 
 Q2 does not use very many packages, the Quasi-Periodic kernels and GP models are all implemented in pure python in the
 `src/q1/utils.py` file, and the `emcee` package is used for the MCMC sampling.
 
 ## <a name="report"></a> 4. Report
-The report is located at [report/out/main.pdf](report/out/main.pdf).
+The report is located at [report/main.pdf](report/main.pdf).

@@ -13,6 +13,7 @@
 \usepackage{subcaption}
 \usepackage{blindtext}
 \usepackage{seqsplit}
+\usepackage{booktabs}
 
 %\newcommand{\inlinecode}[1]{\lstinline{#1}}
 %\newcommand{\inlinecode}[1]{\texttt{#1}}
@@ -29,7 +30,7 @@
 % e-mail addresses: one for each author, in the same order as the authors
 \emailAdd{as3438@cam.ac.uk}
 \note{Word Count: XXXXX (including figure captions and appendix).}
-
+\bibliographystyle{apalike}
 
 \begin{document}
 \maketitle
@@ -37,6 +38,7 @@
 
 
 \input{sections/q1}
+\input{sections/q2}
 
 \clearpage
 \appendix
@@ -54,17 +56,24 @@
 
 \begin{thebibliography}{99}
 
-%\bibitem{prince}
-%Simon J.D.\ Prince,
-%\textit{Understanding Deep Learning}.
-%The MIT Press, 2023.
-%Available at \url{https://udlbook.github.io/udlbook/} [Accessed: 20-Mar-2024].
-%
-%\bibitem{bansal}
-%Bansal et al.,
-%\textit{Cold Diffusion: Inverting Arbitrary Image Transforms Without Noise}.
-%University of Maryland and New York University, 2022.
-%Available at \url{https://arxiv.org/pdf/2208.09392.pdf} [Accessed: 28-Mar-2024].
+\bibitem{lomb}
+Lomb, N.R.,
+\textit{Least-squares frequency analysis of unequally spaced data}.
+Astrophysics and Space Science, 39(2), pp.447-462, 1976.
+Available at \url{https://doi.org/10.1007/BF00648343} [Accessed: 20-Jun-2024].
+
+\bibitem{scargle}
+Scargle, J.D.,
+\textit{Studies in astronomical time series analysis. II - Statistical aspects of spectral analysis of unevenly spaced data}.
+The Astrophysical Journal, 263, pp.835-853, 1982.
+Available at \url{https://doi.org/10.1086/160554} [Accessed: 20-Jun-2024].
+
+\bibitem{faria2022}
+Faria, J.P., Suárez Mascareño, A., Figueira, P., et al.,
+\textit{A candidate short-period sub-Earth orbiting Proxima Centauri}.
+Astronomy \& Astrophysics, 658, A115, 2022.
+Available at \url{https://doi.org/10.1051/0004-6361/202142337} [Accessed: 20-Jun-2024].
+
 
 \end{thebibliography}
 

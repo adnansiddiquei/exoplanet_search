@@ -1,6 +1,51 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from .utils import invert_transform, invert_scale, fold
+from astropy.timeseries import LombScargle
+
+
+def data_plot(data):
+    fig, axes = plt.subplots(1, 3, figsize=(14, 3))
+
+    titles = ['RV', 'FWHM', 'BIS']
+
+    axes[0].set_ylabel('RV ($m s^{-1}$)')
+    [axes[i].margins(x=0.05) for i in range(3)]
+    [axes[i].set_title(title) for i, title in enumerate(titles)]
+    [axes[i].set_xlabel('Time (BJD)') for i in range(3)]
+
+    axes[0].errorbar(
+        data['time'],
+        data['radial_velocity'],
+        yerr=data['radial_velocity_uncertainty'],
+        fmt='x',
+    )
+    axes[1].errorbar(
+        data['time'], data['FWHM_CCF'], yerr=data['FWHM_CCF_uncertainty'], fmt='x'
+    )
+    axes[2].errorbar(data['time'], data['BIS'], yerr=data['BIS_uncertainty'], fmt='x')
+
+    return fig, axes
+
+
+def lombscargle_periodogram(time, rv):
+    periods = np.arange(time.min() + 0.5, time.max() + 0.5, 0.5)
+    power = LombScargle(time, rv).power(1 / periods)
+
+    fig, axes = plt.subplots(
+        3, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [1, 1, 1]}
+    )
+
+    [axes[i].set_ylabel('Power') for i in range(3)]
+    [axes[i].margins(x=0.01) for i in range(3)]
+    [axes[i].plot(periods, power) for i in range(3)]
+
+    axes[1].set_xlim(0, 1000)
+    axes[2].set_xlim(0, 200)
+
+    axes[2].set_xlabel('Period (days)')
+
+    return fig, axes
 
 
 def plot_1planet_model(
@@ -59,7 +104,7 @@ def plot_1planet_model(
     )
 
     residuals_2 = residuals - orbital_model._sin_wave(folded_time, params)
-    axes[1].errsrbar(
+    axes[1].errorbar(
         folded_time / folded_time.max(), residuals_2, yerr=rv_err, fmt='kx'
     )
     axes[1].margins(x=0.03)
@@ -85,7 +130,7 @@ def triple_plot(kernels, time, y, y_err, time_scaler, y_scalers):
         4, 1, figsize=(14, 14), gridspec_kw={'height_ratios': [1, 0.5, 1, 1]}
     )
 
-    titles = ['(a) RV', '(c) FWHM', '(d) BIS']
+    titles = ['RV', 'FWHM', 'BIS']
     y_label = 'RV ($m s^{-1}$)'
     x_label = 'Time (BJD)'
 
@@ -97,7 +142,7 @@ def triple_plot(kernels, time, y, y_err, time_scaler, y_scalers):
             invert_transform(y[:, i], y_scalers[i]),
             yerr=invert_scale(y_err[:, i], y_scalers[i]),
             fmt='kx',
-            label=f'{titles[i]} training data',
+            label=f'{titles[i]} Data',
         )
 
         axes[axes_index].plot(
@@ -138,7 +183,7 @@ def triple_plot(kernels, time, y, y_err, time_scaler, y_scalers):
     axes[1].axhline(0, color='r', linestyle='--')
     axes[1].set_xlabel(x_label)
     axes[1].set_ylabel('Residuals ($m s^{-1}$)')
-    axes[1].set_title('(b) Residuals of RV Fit')
+    axes[1].set_title('Residuals of RV Fit')
     axes[1].legend()
 
     plt.tight_layout()

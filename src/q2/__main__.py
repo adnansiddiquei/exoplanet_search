@@ -7,7 +7,12 @@ from .utils import (
     invert_scale,
     invert_transform,
 )
-from .plotting_utils import triple_plot, plot_1planet_model
+from .plotting_utils import (
+    triple_plot,
+    plot_1planet_model,
+    lombscargle_periodogram,
+    data_plot,
+)
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from src.utils import create_dir_if_required, save_dill, load_dill
@@ -72,6 +77,17 @@ def main():
 
     # set a seed for reproducibility
     np.random.seed(42)
+
+    # Do the initial plot of the data
+    fig, ax = data_plot(data)
+    plt.savefig(f'{out_dir}/data_plot.png', bbox_inches='tight')
+
+    # -----------------------------------------------------------------------------------------------
+    # LOMBSCARGLE PERIODOGRAM
+    # -----------------------------------------------------------------------------------------------
+
+    fig, ax = lombscargle_periodogram(data['time'], data['radial_velocity'])
+    plt.savefig(f'{out_dir}/lombscargle_periodogram.png', bbox_inches='tight')
 
     # -----------------------------------------------------------------------------------------------
     # MODEL STELLAR NOISE - with a Quasi-Periodic GP model, jointly fitting the RV data and the stellar indicators

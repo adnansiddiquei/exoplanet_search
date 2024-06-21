@@ -12,6 +12,7 @@ from .plotting_utils import (
     plot_1planet_model,
     lombscargle_periodogram,
     data_plot,
+    plot_stellar_period_2dhist,
 )
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -146,6 +147,7 @@ def main():
 
     threshold = np.percentile(log_prob_samples, 10)
     filtered_samples = samples[log_prob_samples >= threshold]
+    filtered_samples_log_prob = log_prob_samples[log_prob_samples >= threshold]
 
     # Output a corner plot
     labels = gp.params_keys.copy()
@@ -158,6 +160,10 @@ def main():
 
     figure = corner.corner(filtered_samples, labels=labels, truths=None)
     plt.savefig(f'{out_dir}/stellar_noise_corner_plot.png', bbox_inches='tight')
+
+    # Also create a 2D histogram of the stellar period vs. log likelihood
+    fig, ax = plot_stellar_period_2dhist(filtered_samples, filtered_samples_log_prob)
+    plt.savefig(f'{out_dir}/stellar_period_2dhist.png', bbox_inches='tight')
 
     # Let's also output the GP fit with the highest likelihood parameters
     best_fit_params = normalised_samples[np.argmax(log_prob_samples)]
@@ -259,12 +265,6 @@ def main():
         bbox_inches='tight',
     )
 
-    # this will print "95th percentile range: 1.47 - 222.87"
-    print(
-        f'95th percentile range: {filtered_planet_periods.min():.2f} - {filtered_planet_periods.max():.2f} which '
-        f'consists {len(filtered_planet_periods)} samples out of {len(planet_period)} samples.'
-    )
-
     # Now based on the above first scan, we can refine the priors for the period to a smaller range
     # this model will yield a much better estimate of the parameters
     if not os.path.exists(f'{out_dir}/1planet_model_2.dill'):
@@ -275,7 +275,7 @@ def main():
                 'P_0': (
                     0,
                     filtered_planet_periods.max() * 1.1,
-                ),  # so we now know the period is between 1.47 and 222.87
+                ),  # so we now know the period is between 1.72 - 53.10 from the first run
                 'phase_offset_0': ignorant_prior_phase_offset,
             },
             nwalkers=250,

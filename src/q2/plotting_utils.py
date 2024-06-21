@@ -60,8 +60,8 @@ def plot_1planet_model(
     # extract the estiamtes for the period and amplitude
     periods = samples[:, 1]
     periods = periods[(periods > 2.5) & (periods < 7.5)]
-    p_mean, p_std = periods.mean(), periods.std()
-    amp_mean, amp_std = np.mean(samples[:, 0]), np.std(samples[:, 0])
+    p_std = periods.std()
+    amp_std = np.std(samples[:, 0])
 
     # start plotting
     fig, axes = plt.subplots(
@@ -93,9 +93,9 @@ def plot_1planet_model(
     axes[0].text(
         0.75,
         y_max - 0.05 * (y_max - y_min),
-        rf'Period = {p_mean:.2f} $\pm$ {p_std:.2f} days'
+        rf'Period = {params["P_0"]:.2f} $\pm$ {2*p_std:.2f} days'
         + '\n'
-        + rf'Amplitude = {amp_mean:.2e} $\pm$ {amp_std:.1e} $ms^{{-1}}$',
+        + rf'Semi-amplitude = {params["amplitude_0"]:.2e} $\pm$ {2*amp_std:.1e} $ms^{{-1}}$',
         color='black',
         fontsize=14,
         ha='right',
@@ -188,3 +188,44 @@ def triple_plot(kernels, time, y, y_err, time_scaler, y_scalers):
 
     plt.tight_layout()
     return fig
+
+
+def plot_stellar_period_2dhist(filtered_samples, filtered_samples_log_prob):
+    fig, ax = plt.subplots()
+    periods = filtered_samples[:, 3]
+    loglikelihoods = filtered_samples_log_prob
+
+    loglikelihoods = loglikelihoods[(periods > 34) & (periods < 41)]
+    periods = periods[(periods > 34) & (periods < 41)]
+
+    plt.hist2d(periods, loglikelihoods, bins=100, cmap='turbo')
+    plt.colorbar(label='Density')
+    plt.xlabel(r'Stellar Period $\theta_{3}$ (days)')
+    plt.ylabel('Log-likelihood')
+
+    group1 = periods[periods < 37]
+    group2 = periods[periods > 37]
+
+    plt.text(
+        36.9,
+        7.2,
+        rf'{group1.mean():.1f} $\pm$ {2*group1.std():.1f} days',
+        color='black',
+        fontsize=10,
+        ha='center',
+        va='center',
+        bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'),
+    )
+
+    plt.text(
+        37.6,
+        -10,
+        rf'{group2.mean():.1f} $\pm$ {2*group2.std():.1f} days',
+        color='black',
+        fontsize=10,
+        ha='center',
+        va='center',
+        bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'),
+    )
+
+    return fig, ax
